@@ -11,7 +11,7 @@ if (apiKey && apiKey !== 'your_gemini_api_key_here') {
   console.warn('⚠️ GEMINI_API_KEY tanımlanmamış veya varsayılan değerde. AI analizleri akıllı simülasyon modunda çalışacak.');
 }
 
-const getGeminiModel = (modelName = 'gemini-1.5-flash') => {
+const getGeminiModel = (modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest') => {
   if (!genAI) return null;
   return genAI.getGenerativeModel({ model: modelName });
 };
