@@ -58,8 +58,25 @@ const setCache = async (key, value, ttlSeconds = 3600) => {
   }
 };
 
+/**
+ * Önbellekten veri sil
+ */
+const deleteCache = async (key) => {
+  try {
+    if (isRedisAvailable && redisClient) {
+      await redisClient.del(key);
+    }
+    memoryCache.del(key);
+    return true;
+  } catch (err) {
+    memoryCache.del(key);
+    return true;
+  }
+};
+
 module.exports = {
   getCache,
   setCache,
+  deleteCache,
   redisClient
 };

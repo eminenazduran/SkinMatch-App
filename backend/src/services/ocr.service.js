@@ -1,42 +1,82 @@
+const crypto = require('crypto');
+
 /**
  * OCR Ham Metin Temizleyici ve INCI Ayrıştırıcı Servisi
  */
 
 /**
- * OCR metninden başlıkları, pazarlama kelimelerini ve gereksiz sembolleri temizler
+ * OCR metninden başlıkları, pazarlama ifadelerini ve gürültülü sembolleri temizler
+ * @param {string} rawText - OCR'dan veya kameradan gelen ham metin
+ * @returns {string} - Temizlenmiş INCI metni
  */
 const cleanOcrText = (rawText = '') => {
-  if (!rawText) return '';
+  if (!rawText || typeof rawText !== 'string') return '';
 
   let cleaned = rawText
-    // 'Ingredients:', 'İçindekiler:', 'Inhaltsstoffe:', 'Composition:' gibi başlıkları ayıkla
-    .replace(/(?:ingredients?|içindekiler|inhaltsstoffe|composition|inci|contents)\s*[:：\-]/gi, '')
-    // Gereksiz satır sonlarını tek boşluğa çevir
-    .replace(/[\r\n]+/g, ' ')
-    // Özel tırnak işaretlerini standartlaştır
+    // Çok dilli yaygın başlıkları ayıkla (Ingredients, İçindekiler, Inhaltsstoffe, Ingrédients, vb.)
+    .replace(/(?:active\s+ingredients?|inactive\s+ingredients?|ingredients?|içindekiler|içerik|inhaltsstoffe|composition|ingrédients?|ingredientes?|inci|contents)\s*[:：\-]/gi, '')
+    // Pazarlama ve uyarı eklerini temizle (Örn: "May contain: +/- ...")
+    .replace(/\[\s*\+\/\-[\s\w\d\,]*\]/gi, '')
+    // Dipnot işaretleri ve yıldızları temizle (*, **, ***, •, ▪, ‣)
+    .replace(/[\*\•\▪\‣\†\‡]/g, '')
+    // Özel tırnak ve parantez varyasyonlarını standartlaştır
     .replace(/[“”«»]/g, '"')
+    .replace(/[{}]/g, '()')
+    // Gereksiz satır sonlarını ve tab boşluklarını tek boşluğa çevir
+    .replace(/[\r\n\t]+/g, ' ')
     // Birden fazla boşluğu teke indir
     .replace(/\s{2,}/g, ' ')
     .trim();
+
+  // Sonunda nokta veya noktalı virgül varsa kaldır
+  cleaned = cleaned.replace(/[\.\;]+$/, '');
 
   return cleaned;
 };
 
 /**
- * Temizlenmiş INCI metnini virgül, nokta veya tire işaretlerine göre ayrıştırır
+ * Temizlenmiş INCI metnini bileşen dizisine (string[]) ayrıştırır.
+ * Parantez içindeki virgülleri (Örn: "Centella Asiatica Extract (and) Madecassoside") korur.
+ * @param {string} cleanedText - Temizlenmiş INCI metni
+ * @returns {string[]} - Ayrıştırılmış bileşen adları
  */
 const parseIngredientsList = (cleanedText = '') => {
   if (!cleanedText) return [];
 
-  // Parantez içi virgülleri geçici koruyarak ana bileşen virgüllerinden böl
-  const rawParts = cleanedText.split(/,(?![^(]*\))/g);
+  // Parantez dışındaki virgüllere veya noktalı virgüllere göre böl
+  const rawParts = cleanedText.split(/[,;](?![^(]*\))/g);
 
   return rawParts
-    .map(item => item.trim().replace(/^[\d\.\-\*\•\s]+/, '').replace(/[\.\;]$/, '').trim())
-    .filter(item => item.length > 1 && !/^(and|or|ve|veya)$/i.test(item));
+    .map(item => {
+      let trimmed = item.trim();
+      // Başındaki liste numaralarını (1., 2-, a)) veya tireleri temizle
+      trimmed = trimmed.replace(/^[\d\.\-\)\(\s]+/, '');
+      // Baş/son tırnak işaretlerini temizle
+      trimmed = trimmed.replace(/^["']+|["']+$/g, '');
+      return trimmed.trim();
+    })
+    .filter(item => {
+      // Çok kısa veya anlamsız bağlaçları filtrele
+      if (item.length < 2) return false;
+      if (/^(and|or|ve|veya|etc|contain|plus)$/i.test(item)) return false;
+      return true;
+    });
+};
+
+/**
+ * OCR metni ve kullanıcı cilt tipine göre benzersiz MD5 Önbellek Anahtarı (Cache Key) üretir
+ * @param {string} rawText - Taranan içerik metni
+ * @param {string} skinType - Kullanıcı cilt tipi (Oily, Dry, vb.)
+ * @returns {string} - Redis/Memory cache anahtarı (Örn: "inci_scan_a1b2c3d4...")
+ */
+const generateInciCacheKey = (rawText = '', skinType = 'Normal') => {
+  const normalized = (rawText || '').toLowerCase().replace(/\s+/g, '');
+  const hash = crypto.createHash('md5').update(`${normalized}_${skinType.toLowerCase()}`).digest('hex');
+  return `inci_scan_${hash}`;
 };
 
 module.exports = {
   cleanOcrText,
-  parseIngredientsList
+  parseIngredientsList,
+  generateInciCacheKey
 };
