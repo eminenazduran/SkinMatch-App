@@ -1,10 +1,17 @@
 /**
+ * Asenkron fonksiyonları sarmalayarak try/catch kalabalığını önleyen yardımcı middleware (Async Handler)
+ */
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+/**
  * Global Hata Yakalayıcı Middleware
  */
 const errorHandler = (err, req, res, next) => {
   console.error('💥 Sunucu Hatası:', err);
 
-  const statusCode = err.statusCode || res.statusCode === 200 ? 500 : res.statusCode;
+  const statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
 
   res.status(statusCode).json({
     success: false,
@@ -26,6 +33,7 @@ const notFoundHandler = (req, res) => {
 };
 
 module.exports = {
+  asyncHandler,
   errorHandler,
   notFoundHandler
 };

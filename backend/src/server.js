@@ -12,6 +12,7 @@ const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const skinAnalysisRoutes = require('./routes/skinAnalysis.routes');
 const ingredientMatcherRoutes = require('./routes/ingredientMatcher.routes');
 const routineRoutes = require('./routes/routine.routes');
+const historyRoutes = require('./routes/history.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -46,18 +47,22 @@ app.get('/api/health', (req, res) => {
 app.use('/api/skin-analysis', skinAnalysisRoutes);
 app.use('/api/ingredient-matcher', ingredientMatcherRoutes);
 app.use('/api/routine', routineRoutes);
+app.use('/api/history', historyRoutes);
 
 // Hata Yakalayıcılar
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Sunucuyu Başlat
-const server = app.listen(PORT, () => {
-  console.log(`\n======================================================`);
-  console.log(`🌸 SkinMatch App Backend Sunucusu Çalışıyor!`);
-  console.log(`🚀 Port: ${PORT}`);
-  console.log(`🌐 API Sağlık Kontrolü: http://localhost:${PORT}/api/health`);
-  console.log(`======================================================\n`);
-});
+// Sunucuyu Başlat (Test modunda değilse başlat)
+let server = null;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    console.log(`\n======================================================`);
+    console.log(`🌸 SkinMatch App Backend Sunucusu Çalışıyor!`);
+    console.log(`🚀 Port: ${PORT}`);
+    console.log(`🌐 API Sağlık Kontrolü: http://localhost:${PORT}/api/health`);
+    console.log(`======================================================\n`);
+  });
+}
 
 module.exports = app;
