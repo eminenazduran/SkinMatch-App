@@ -13,6 +13,25 @@ export interface ISkinProfile {
   lastAnalysisDate?: string;
 }
 
+export interface IQuizOption {
+  id: string;
+  text: string;
+  description?: string;
+  weightEffect: {
+    oiliness?: number;
+    dryness?: number;
+    sensitivity?: number;
+  };
+}
+
+export interface IQuizQuestion {
+  id: string;
+  title: string;
+  subtitle?: string;
+  category: 'sebum' | 'barrier' | 'sensitivity' | 'concerns';
+  options: IQuizOption[];
+}
+
 export interface IHeroIngredient {
   name: string;
   inciStandardName: string;
@@ -30,6 +49,7 @@ export interface IFlaggedIngredient {
 
 export interface IIngredientAnalysisResult {
   productName: string;
+  brand?: string;
   matchScore: number; // 0 - 100
   suitabilityVerdict: 'Highly Recommended' | 'Suitable with Caution' | 'Not Recommended';
   skinTypeCompatibility: {

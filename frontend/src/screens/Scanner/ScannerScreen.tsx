@@ -7,19 +7,24 @@ import {
   TextInput,
   ActivityIndicator,
   Modal,
-  ScrollView,
-  SafeAreaView
+  ScrollView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../theme/colors';
 import { typography } from '../../theme/typography';
 import { scanIngredientsApi } from '../../api/client';
 import { IIngredientAnalysisResult } from '../../types';
+
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
 
 interface Props {
   onScanComplete?: (result: IIngredientAnalysisResult) => void;
 }
 
 export const ScannerScreen: React.FC<Props> = ({ onScanComplete }) => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [isScanning, setIsScanning] = useState(false);
   const [manualModalVisible, setManualModalVisible] = useState(false);
   const [manualText, setManualText] = useState(
@@ -42,6 +47,8 @@ export const ScannerScreen: React.FC<Props> = ({ onScanComplete }) => {
         setManualModalVisible(false);
         if (onScanComplete) {
           onScanComplete(response.data.aiAnalysis);
+        } else {
+          navigation.navigate('ProductResult', { result: response.data.aiAnalysis });
         }
       }
     } catch (err: any) {

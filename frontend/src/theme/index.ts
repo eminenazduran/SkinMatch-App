@@ -1,22 +1,14 @@
 import { colors } from './colors';
 import { typography } from './typography';
+import { spacing, borderRadius } from './spacing';
+import { shadows } from './shadows';
 
 export const theme = {
   colors,
   typography,
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-  },
-  borderRadius: {
-    sm: 8,
-    md: 14,
-    lg: 20,
-    full: 9999,
-  }
+  spacing,
+  borderRadius,
+  shadows,
 };
 
-export { colors, typography };
+export { colors, typography, spacing, borderRadius, shadows };
