@@ -7,7 +7,7 @@ const { analyzeSkinHybridWithGemini } = require('../services/gemini.service');
  */
 const submitQuizAnswers = async (req, res, next) => {
   try {
-    const { userId, answers } = req.body;
+    const { userId, answers, computedProfile } = req.body;
 
     if (!answers || !Array.isArray(answers) || answers.length === 0) {
       return res.status(400).json({
@@ -33,6 +33,13 @@ const submitQuizAnswers = async (req, res, next) => {
       user.skinProfile.lastAnalysisDate = new Date();
     }
 
+    if (computedProfile) {
+      if (computedProfile.skinType) user.skinProfile.skinType = computedProfile.skinType;
+      if (computedProfile.barrierHealth) user.skinProfile.barrierHealth = computedProfile.barrierHealth;
+      if (computedProfile.primaryConcerns) user.skinProfile.primaryConcerns = computedProfile.primaryConcerns;
+      if (computedProfile.knownSensitivities) user.skinProfile.knownSensitivities = computedProfile.knownSensitivities;
+    }
+
     await user.save();
 
     res.status(200).json({
@@ -40,7 +47,8 @@ const submitQuizAnswers = async (req, res, next) => {
       message: 'Anket cevapları başarıyla kaydedildi.',
       data: {
         userId: user._id,
-        quizAnswersCount: answers.length
+        quizAnswersCount: answers.length,
+        skinProfile: user.skinProfile
       }
     });
   } catch (error) {

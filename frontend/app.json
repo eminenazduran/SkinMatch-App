@@ -4,13 +4,7 @@
     "slug": "skinmatch-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FAF9F6"
-    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -18,10 +12,6 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FAF9F6"
-      },
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE"
@@ -33,7 +23,8 @@
         {
           "cameraPermission": "SkinMatch'in kozmetik ürün içeriklerini tarayabilmesi için kamera izni gerekiyor."
         }
-      ]
+      ],
+      "expo-status-bar"
     ]
   }
 }

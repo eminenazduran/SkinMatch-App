@@ -26,6 +26,7 @@ import {
 } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
 import { useLanguage } from '../../context/LanguageContext';
+import { useSkinProfile } from '../../context/SkinProfileContext';
 import { colors } from '../../theme/colors';
 import { shadows } from '../../theme/shadows';
 
@@ -34,7 +35,31 @@ const { width } = Dimensions.get('window');
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t, language, toggleLanguage } = useLanguage();
+  const { profile } = useSkinProfile();
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+
+  const skinTypeDisplay = (() => {
+    switch (profile.skinType) {
+      case 'Oily':
+        return t('skin_type_oily');
+      case 'Dry':
+        return t('skin_type_dry');
+      case 'Combination':
+        return t('skin_type_combination');
+      case 'Normal':
+        return t('skin_type_normal');
+      case 'Sensitive':
+        return t('skin_type_sensitive');
+      default:
+        return profile.skinType;
+    }
+  })();
+
+  const barrierStatusText = (() => {
+    if (profile.barrierHealth === 'Healthy') return t('home_balanced');
+    if (profile.barrierHealth === 'Needs Repair') return language === 'tr' ? 'Onarımda' : 'Repairing';
+    return language === 'tr' ? 'Dengeleniyor' : 'Balancing';
+  })();
 
   const toggleStep = (stepNumber: number) => {
     setCompletedSteps((prev) =>
@@ -102,16 +127,16 @@ export const HomeScreen: React.FC = () => {
           {/* Sol Kolon: Cilt Durumu */}
           <View style={styles.metricColumn}>
             <View style={styles.metricHeaderRow}>
-              <View style={[styles.pulseIndicator, { backgroundColor: '#10B981' }]} />
+              <View style={[styles.pulseIndicator, { backgroundColor: profile.barrierHealth === 'Needs Repair' ? '#EF4444' : profile.barrierHealth === 'Compromised' ? '#F59E0B' : '#10B981' }]} />
               <Text style={styles.metricTag}>{t('home_status')}</Text>
-              <Text style={styles.metricStatusText}>• {t('home_balanced')}</Text>
+              <Text style={styles.metricStatusText}>• {barrierStatusText}</Text>
             </View>
-            <Text style={styles.metricMainValue}>{t('home_skin_type')}</Text>
+            <Text style={styles.metricMainValue}>{skinTypeDisplay}</Text>
             <View style={styles.barrierProgressRow}>
               <ShieldCheck size={14} color="#4F46E5" />
               <Text style={styles.barrierScoreText}>
                 {t('home_barrier_label')}{' '}
-                <Text style={styles.barrierBoldText}>{t('home_barrier_ideal')}</Text>
+                <Text style={styles.barrierBoldText}>%{profile.barrierScore}</Text>
               </Text>
             </View>
           </View>

@@ -21,12 +21,33 @@ import {
 } from 'lucide-react-native';
 import { RootStackParamList } from '../../navigation/types';
 import { useLanguage } from '../../context/LanguageContext';
+import { useSkinProfile } from '../../context/SkinProfileContext';
 import { AppHeader } from '../../components/common/AppHeader';
 import { colors } from '../../theme/colors';
 
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { profile } = useSkinProfile();
+
+  const skinTypeDisplay = (() => {
+    switch (profile.skinType) {
+      case 'Oily':
+        return t('skin_type_oily');
+      case 'Dry':
+        return t('skin_type_dry');
+      case 'Combination':
+        return t('skin_type_combination');
+      case 'Normal':
+        return t('skin_type_normal');
+      case 'Sensitive':
+        return t('skin_type_sensitive');
+      default:
+        return profile.skinType;
+    }
+  })();
+
+  const barrierBadgeText = language === 'tr' ? profile.barrierBadgeTr : profile.barrierBadgeEn;
 
   return (
     <View style={styles.container}>
@@ -44,7 +65,7 @@ export const ProfileScreen: React.FC = () => {
           <Text style={styles.greetingTitle}>{t('profile_greeting')}</Text>
           <Text style={styles.profileDescription}>
             {t('profile_desc_start')}
-            <Text style={styles.highlightText}>{t('profile_desc_highlight')}</Text>
+            <Text style={styles.highlightText}>{skinTypeDisplay}</Text>
             {t('profile_desc_end')}
           </Text>
 
@@ -75,7 +96,7 @@ export const ProfileScreen: React.FC = () => {
           <View style={styles.gaugeContainer}>
             <View style={styles.gaugeOuterRing}>
               <View style={styles.gaugeInnerContent}>
-                <Text style={styles.gaugePercentNumber}>60%</Text>
+                <Text style={styles.gaugePercentNumber}>{profile.barrierScore}%</Text>
                 <Text style={styles.gaugeLabel}>{t('profile_barrier_health')}</Text>
               </View>
             </View>
@@ -83,7 +104,7 @@ export const ProfileScreen: React.FC = () => {
 
           <View style={styles.barrierBadgeRow}>
             <ShieldCheck size={16} color="#4F46E5" />
-            <Text style={styles.barrierBadgeText}>Dengelenme & Onarım Sürecinde</Text>
+            <Text style={styles.barrierBadgeText}>{barrierBadgeText}</Text>
           </View>
         </View>
 
@@ -103,42 +124,36 @@ export const ProfileScreen: React.FC = () => {
           </View>
 
           <View style={styles.chipsContainer}>
-            <View style={styles.loveChip}>
-              <Text style={styles.loveChipText}>{t('profile_pill_ceramides')}</Text>
-            </View>
-            <View style={styles.loveChip}>
-              <Text style={styles.loveChipText}>{t('profile_pill_niacinamide')}</Text>
-            </View>
-            <View style={styles.loveChip}>
-              <Text style={styles.loveChipText}>{t('profile_pill_hyaluronic')}</Text>
-            </View>
+            {profile.loveIngredients.map((item, idx) => (
+              <View key={idx} style={styles.loveChip}>
+                <Text style={styles.loveChipText}>{item}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
         {/* Kaçınılacaklar (Avoid) */}
-        <View style={[styles.ingredientBlock, styles.avoidBlockBorder]}>
-          <View style={styles.blockHeader}>
-            <View style={[styles.blockIconCircle, { backgroundColor: '#FEF2F2' }]}>
-              <AlertCircle size={16} color="#DC2626" />
+        {profile.avoidIngredients.length > 0 && (
+          <View style={[styles.ingredientBlock, styles.avoidBlockBorder]}>
+            <View style={styles.blockHeader}>
+              <View style={[styles.blockIconCircle, { backgroundColor: '#FEF2F2' }]}>
+                <AlertCircle size={16} color="#DC2626" />
+              </View>
+              <View style={styles.blockTitleWrapper}>
+                <Text style={styles.blockTitle}>{t('profile_avoid_title')}</Text>
+                <Text style={styles.blockSubtitle}>{t('profile_avoid_desc')}</Text>
+              </View>
             </View>
-            <View style={styles.blockTitleWrapper}>
-              <Text style={styles.blockTitle}>{t('profile_avoid_title')}</Text>
-              <Text style={styles.blockSubtitle}>{t('profile_avoid_desc')}</Text>
-            </View>
-          </View>
 
-          <View style={styles.chipsContainer}>
-            <View style={styles.avoidChip}>
-              <Text style={styles.avoidChipText}>{t('profile_pill_alcohol')}</Text>
-            </View>
-            <View style={styles.avoidChip}>
-              <Text style={styles.avoidChipText}>{t('profile_pill_fragrance')}</Text>
-            </View>
-            <View style={styles.avoidChip}>
-              <Text style={styles.avoidChipText}>{t('profile_pill_essential_oils')}</Text>
+            <View style={styles.chipsContainer}>
+              {profile.avoidIngredients.map((item, idx) => (
+                <View key={idx} style={styles.avoidChip}>
+                  <Text style={styles.avoidChipText}>{item}</Text>
+                </View>
+              ))}
             </View>
           </View>
-        </View>
+        )}
       </ScrollView>
     </View>
   );

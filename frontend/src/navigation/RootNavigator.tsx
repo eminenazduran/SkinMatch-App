@@ -39,6 +39,14 @@ export const RootNavigator: React.FC = () => {
           animation: 'slide_from_right',
         }}
       />
+      <Stack.Screen
+        name="SelfieAnalysis"
+        component={ScannerScreen}
+        options={{
+          presentation: 'modal',
+          animation: 'slide_from_bottom',
+        }}
+      />
     </Stack.Navigator>
   );
 };

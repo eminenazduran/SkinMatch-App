@@ -28,3 +28,12 @@ export const fetchDashboardApi = async (userId?: string) => {
   });
   return response.data;
 };
+
+export const submitQuizAnswersApi = async (answers: any[], computedProfile?: any, userId?: string) => {
+  const response = await apiClient.post('/skin-analysis/quiz', {
+    answers,
+    computedProfile,
+    userId
+  });
+  return response.data;
+};
