@@ -47,7 +47,7 @@ describe('Day 4: Backend REST API Endpoints & Controller Tests', () => {
     expect(validRes.body.data.quizAnswersCount).toBe(1);
   });
 
-  // 3. Skin Analysis - Selfie
+  // 3. Skin Analysis - Selfie (Gerçek Gemini Vision API Çağrısı)
   test('POST /api/skin-analysis/selfie should process facial metrics and return hybrid profile', async () => {
     const res = await request(app).post('/api/skin-analysis/selfie').send({
       metrics: {
@@ -61,9 +61,9 @@ describe('Day 4: Backend REST API Endpoints & Controller Tests', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.analysis).toBeDefined();
     expect(res.body.data.analysis.determinedSkinType).toBeDefined();
-  });
+  }, 60000);
 
-  // 4. Ingredient Matcher - Scan
+  // 4. Ingredient Matcher - Scan (Gerçek Gemini INCI Analiz Çağrısı)
   test('POST /api/ingredient-matcher/scan should analyze ingredients and return score', async () => {
     const res = await request(app).post('/api/ingredient-matcher/scan').send({
       rawOcrText: 'Aqua, Niacinamide 10%, Zinc PCA 1%, Dimethicone, Phenoxyethanol',
@@ -79,7 +79,7 @@ describe('Day 4: Backend REST API Endpoints & Controller Tests', () => {
     if (res.body.data.scanId) {
       createdScanId = res.body.data.scanId;
     }
-  });
+  }, 60000);
 
   // 5. Ingredient Matcher - Dictionary Search
   test('GET /api/ingredient-matcher/ingredient/:name should return ingredient details from CosIng dictionary', async () => {

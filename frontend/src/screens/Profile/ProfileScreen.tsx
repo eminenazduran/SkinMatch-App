@@ -28,9 +28,12 @@ import { colors } from '../../theme/colors';
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t, language } = useLanguage();
-  const { profile } = useSkinProfile();
+  const { profile, isAnalyzed } = useSkinProfile();
 
   const skinTypeDisplay = (() => {
+    if (!isAnalyzed || profile.skinType === 'Not Determined') {
+      return language === 'tr' ? 'Belirlenmedi' : 'Not Determined';
+    }
     switch (profile.skinType) {
       case 'Oily':
         return t('skin_type_oily');
@@ -64,9 +67,17 @@ export const ProfileScreen: React.FC = () => {
         <View style={styles.profileHero}>
           <Text style={styles.greetingTitle}>{t('profile_greeting')}</Text>
           <Text style={styles.profileDescription}>
-            {t('profile_desc_start')}
-            <Text style={styles.highlightText}>{skinTypeDisplay}</Text>
-            {t('profile_desc_end')}
+            {isAnalyzed ? (
+              <>
+                {t('profile_desc_start')}
+                <Text style={styles.highlightText}>{skinTypeDisplay}</Text>
+                {t('profile_desc_end')}
+              </>
+            ) : (
+              language === 'tr'
+                ? 'Cilt profiliniz henüz analiz edilmedi. Size özel gerçek cilt tipinizi, bariyer sağlığınızı ve içerik haritanızı çıkarmak için lütfen aşağıdaki Cilt Analizi Anketini tamamlayın veya Yüz Taraması yapın.'
+                : 'Your skin profile has not been analyzed yet. Please complete the Skin Analysis Quiz or Face Scan below to discover your real skin type and personalized ingredient list.'
+            )}
           </Text>
 
           {/* İkili Eylem Butonları */}
@@ -77,7 +88,9 @@ export const ProfileScreen: React.FC = () => {
               onPress={() => navigation.navigate('Quiz')}
             >
               <ClipboardList size={15} color="#FFFFFF" />
-              <Text style={styles.retakeQuizBtnText}>{t('profile_btn_retake')}</Text>
+              <Text style={styles.retakeQuizBtnText}>
+                {isAnalyzed ? t('profile_btn_retake') : (language === 'tr' ? 'Anketi Çöz' : 'Start Quiz')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -93,65 +106,97 @@ export const ProfileScreen: React.FC = () => {
 
         {/* 2. Dairesel Bariyer Sağlığı Göstergesi (Bariyer Kartı) */}
         <View style={styles.barrierHealthCard}>
-          <View style={styles.gaugeContainer}>
-            <View style={styles.gaugeOuterRing}>
-              <View style={styles.gaugeInnerContent}>
-                <Text style={styles.gaugePercentNumber}>{profile.barrierScore}%</Text>
-                <Text style={styles.gaugeLabel}>{t('profile_barrier_health')}</Text>
+          {isAnalyzed && profile.barrierScore > 0 ? (
+            <>
+              <View style={styles.gaugeContainer}>
+                <View style={styles.gaugeOuterRing}>
+                  <View style={styles.gaugeInnerContent}>
+                    <Text style={styles.gaugePercentNumber}>{profile.barrierScore}%</Text>
+                    <Text style={styles.gaugeLabel}>{t('profile_barrier_health')}</Text>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
 
-          <View style={styles.barrierBadgeRow}>
-            <ShieldCheck size={16} color="#4F46E5" />
-            <Text style={styles.barrierBadgeText}>{barrierBadgeText}</Text>
-          </View>
+              <View style={styles.barrierBadgeRow}>
+                <ShieldCheck size={16} color="#4F46E5" />
+                <Text style={styles.barrierBadgeText}>{barrierBadgeText}</Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.unanalyzedCardContent}>
+              <View style={styles.unanalyzedIconCircle}>
+                <Sparkles size={28} color="#4F46E5" />
+              </View>
+              <Text style={styles.unanalyzedTitle}>
+                {language === 'tr' ? 'Gerçek Cilt Analizi Bekleniyor' : 'Real Skin Analysis Pending'}
+              </Text>
+              <Text style={styles.unanalyzedDesc}>
+                {language === 'tr'
+                  ? 'Klinik anketimizi çözerek veya ön kameranızla selfie çekerek %100 size özel gerçek analizi hemen başlatın.'
+                  : 'Start your 100% personalized real analysis by taking the clinical quiz or scanning with the front camera.'}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* 3. Bileşen Tercihleri (Sevilenler & Kaçınılacaklar) */}
         <Text style={styles.sectionHeading}>{t('profile_ingredient_heading')}</Text>
 
-        {/* Sevilenler (Love) */}
-        <View style={styles.ingredientBlock}>
-          <View style={styles.blockHeader}>
-            <View style={[styles.blockIconCircle, { backgroundColor: '#F5F3FF' }]}>
-              <Heart size={16} color="#7C3AED" />
-            </View>
-            <View style={styles.blockTitleWrapper}>
-              <Text style={styles.blockTitle}>{t('profile_love_title')}</Text>
-              <Text style={styles.blockSubtitle}>{t('profile_love_desc')}</Text>
-            </View>
-          </View>
-
-          <View style={styles.chipsContainer}>
-            {profile.loveIngredients.map((item, idx) => (
-              <View key={idx} style={styles.loveChip}>
-                <Text style={styles.loveChipText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Kaçınılacaklar (Avoid) */}
-        {profile.avoidIngredients.length > 0 && (
-          <View style={[styles.ingredientBlock, styles.avoidBlockBorder]}>
-            <View style={styles.blockHeader}>
-              <View style={[styles.blockIconCircle, { backgroundColor: '#FEF2F2' }]}>
-                <AlertCircle size={16} color="#DC2626" />
-              </View>
-              <View style={styles.blockTitleWrapper}>
-                <Text style={styles.blockTitle}>{t('profile_avoid_title')}</Text>
-                <Text style={styles.blockSubtitle}>{t('profile_avoid_desc')}</Text>
-              </View>
-            </View>
-
-            <View style={styles.chipsContainer}>
-              {profile.avoidIngredients.map((item, idx) => (
-                <View key={idx} style={styles.avoidChip}>
-                  <Text style={styles.avoidChipText}>{item}</Text>
+        {isAnalyzed ? (
+          <>
+            {/* Sevilenler (Love) */}
+            {profile.loveIngredients.length > 0 && (
+              <View style={styles.ingredientBlock}>
+                <View style={styles.blockHeader}>
+                  <View style={[styles.blockIconCircle, { backgroundColor: '#F5F3FF' }]}>
+                    <Heart size={16} color="#7C3AED" />
+                  </View>
+                  <View style={styles.blockTitleWrapper}>
+                    <Text style={styles.blockTitle}>{t('profile_love_title')}</Text>
+                    <Text style={styles.blockSubtitle}>{t('profile_love_desc')}</Text>
+                  </View>
                 </View>
-              ))}
-            </View>
+
+                <View style={styles.chipsContainer}>
+                  {profile.loveIngredients.map((item, idx) => (
+                    <View key={idx} style={styles.loveChip}>
+                      <Text style={styles.loveChipText}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Kaçınılacaklar (Avoid) */}
+            {profile.avoidIngredients.length > 0 && (
+              <View style={[styles.ingredientBlock, styles.avoidBlockBorder]}>
+                <View style={styles.blockHeader}>
+                  <View style={[styles.blockIconCircle, { backgroundColor: '#FEF2F2' }]}>
+                    <AlertCircle size={16} color="#DC2626" />
+                  </View>
+                  <View style={styles.blockTitleWrapper}>
+                    <Text style={styles.blockTitle}>{t('profile_avoid_title')}</Text>
+                    <Text style={styles.blockSubtitle}>{t('profile_avoid_desc')}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.chipsContainer}>
+                  {profile.avoidIngredients.map((item, idx) => (
+                    <View key={idx} style={styles.avoidChip}>
+                      <Text style={styles.avoidChipText}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
+        ) : (
+          <View style={styles.emptyIngredientCard}>
+            <Text style={styles.emptyIngredientText}>
+              {language === 'tr'
+                ? 'Analiz tamamlandığında cildinizin en iyi tepki verdiği aktif içerikler ve kaçınmanız gereken maddeler burada tamamen size özel olarak listelenecektir.'
+                : 'Once analyzed, beneficial ingredients and substances to avoid for your specific skin will be listed here.'}
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -380,5 +425,46 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: '#DC2626',
+  },
+  unanalyzedCardContent: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  unanalyzedIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  unanalyzedTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  unanalyzedDesc: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+  },
+  emptyIngredientCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  emptyIngredientText: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

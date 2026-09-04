@@ -5,6 +5,8 @@ import { AppTabsNavigator } from './AppTabsNavigator';
 import { ScannerScreen } from '../screens/Scanner/ScannerScreen';
 import { ProductAnalysisResultScreen } from '../screens/ProductResult/ProductAnalysisResultScreen';
 import { QuizScreen } from '../screens/Quiz/QuizScreen';
+import { SelfieScreen } from '../screens/SkinAnalysis/SelfieScreen';
+import { SkinProfileResultScreen } from '../screens/SkinAnalysis/SkinProfileResultScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -41,10 +43,17 @@ export const RootNavigator: React.FC = () => {
       />
       <Stack.Screen
         name="SelfieAnalysis"
-        component={ScannerScreen}
+        component={SelfieScreen}
         options={{
           presentation: 'modal',
           animation: 'slide_from_bottom',
+        }}
+      />
+      <Stack.Screen
+        name="SkinProfileResult"
+        component={SkinProfileResultScreen}
+        options={{
+          animation: 'slide_from_right',
         }}
       />
     </Stack.Navigator>

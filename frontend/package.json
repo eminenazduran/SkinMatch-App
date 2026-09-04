@@ -17,6 +17,7 @@
     "axios": "^1.7.9",
     "expo": "57.0.20",
     "expo-camera": "~57.0.4",
+    "expo-constants": "~57.0.17",
     "expo-haptics": "~57.0.2",
     "expo-image-picker": "~57.0.16",
     "expo-linear-gradient": "~57.0.1",

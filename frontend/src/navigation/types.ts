@@ -20,5 +20,10 @@ export type RootStackParamList = {
   ProductResult: { result: IIngredientAnalysisResult };
   Quiz: undefined;
   SelfieAnalysis: undefined;
+  SkinProfileResult: {
+    result: any;
+    photoUri?: string;
+    metrics?: any;
+  };
   IngredientDetail: { ingredientName: string };
 };

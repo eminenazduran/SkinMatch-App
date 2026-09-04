@@ -45,10 +45,13 @@ Lütfen yanıtını SADECE ve KESİNLİKLE aşağıdaki geçerli JSON formatınd
 {
   "determinedSkinType": "Combination",
   "barrierHealth": "Healthy",
+  "oilinessScore": 55,
+  "rednessScore": 25,
+  "poreScore": 40,
   "oilinessLevel": "Moderate T-Zone Shine",
   "sensitivityRisk": "Low",
   "detectedConcerns": ["Enlarged Pores", "Occasional Breakouts"],
-  "analysisSummary": "Anket yanıtlarınız ve görsel analiziniz karma bir cilt yapısına işaret ediyor. T-bölgeniz yağlanmaya meyilliyken yanaklarınız dengelidir.",
+  "analysisSummary": "Anket yanıtlarınız ve yüz görseliniz karma bir cilt yapısına işaret ediyor. T-bölgeniz yağlanmaya meyilliyken yanaklarınız dengelidir.",
   "keyRecommendations": [
     "Hafif jel bazlı temizleyiciler tercih edin",
     "Salisilik asit veya Niasinamid içeren serumlar kullanın",

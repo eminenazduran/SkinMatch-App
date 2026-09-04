@@ -2,6 +2,31 @@ const { getGeminiModel } = require('../config/gemini');
 const { INGREDIENT_ANALYSIS_SCHEMA_PROMPT, SKIN_HYBRID_ANALYSIS_SCHEMA_PROMPT } = require('../types/geminiSchemas');
 
 /**
+ * Geçici 503 / 429 yük dalgalanmalarına karşı otomatik yeniden deneme (Retry) mekanizması
+ */
+const callGeminiWithRetry = async (model, contents, maxRetries = 2) => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await model.generateContent(contents);
+    } catch (err) {
+      const isRetryable =
+        err.message &&
+        (err.message.includes('503') ||
+          err.message.includes('429') ||
+          err.message.includes('high demand') ||
+          err.message.includes('ResourceExhausted'));
+
+      if (isRetryable && attempt < maxRetries) {
+        console.warn(`⚠️ Gemini API yoğunluk uyarısı, ${attempt}. deneme 1.5 sn sonra tekrarlanıyor...`);
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        continue;
+      }
+      throw err;
+    }
+  }
+};
+
+/**
  * OCR'dan gelen INCI listesini ve kullanıcı profilini analiz eden Gemini AI Servisi
  */
 const analyzeIngredientsWithGemini = async (rawInciText, userProfile = {}) => {
@@ -41,7 +66,7 @@ ${INGREDIENT_ANALYSIS_SCHEMA_PROMPT}
 
   if (model) {
     try {
-      const result = await model.generateContent(prompt);
+      const result = await callGeminiWithRetry(model, prompt);
       const responseText = result.response.text();
       return parseGeminiJsonResponse(responseText);
     } catch (error) {
@@ -58,27 +83,49 @@ ${INGREDIENT_ANALYSIS_SCHEMA_PROMPT}
 /**
  * Anket ve Yüz Görseli metriklerini birleştiren Hibrit Cilt Tipi Analizi
  */
-const analyzeSkinHybridWithGemini = async (quizAnswers, selfieMetrics = {}) => {
+const analyzeSkinHybridWithGemini = async (quizAnswers, selfieMetrics = {}, photoBase64 = null) => {
   const model = getGeminiModel();
 
   const prompt = `
-Sen uzman bir Cilt Analiz Uzmanı ve Dermatolojik Danışmansın.
-Aşağıdaki dinamik anket yanıtlarını ve yüz görsel metriklerini analiz ederek kullanıcının nihai kozmetik cilt tipini, bariyer durumunu ve önerilerini belirle.
+Sen uzman bir Klinik Cilt Analiz Uzmanı ve Dermatolojik Danışmansın.
+Aşağıda kullanıcının yanıtladığı anket verileri ve ekte kullanıcının doğrudan kameradan çekilmiş gerçek yüz fotoğrafı bulunmaktadır.
+
+GÖREVİN:
+1. Ekli yüz fotoğrafını dikkatle incele:
+   - Alın, burun ve çene (T-bölgesi) parlamasını, sebum yoğunluğunu,
+   - Yanaklardaki gerginlik, kuruluk veya nemsizlik belirtilerini,
+   - Varsa kızarıklık, kılcal damar belirginliği veya tahriş bölgelerini,
+   - Gözenek görünürlüğünü ve büyüklüğünü,
+   - Cilt bariyeri sağlamlığını.
+2. Bu görsel incelemeyi kullanıcının çözdüğü anket yanıtlarıyla çapraz doğrulayarak (cross-validation) birleştir.
+3. Kullanıcının cildine gerçekten iyi gelecek, bilimsel olarak kanıtlanmış kahraman içerikleri (ingredientsToLookFor) ve cildine zarar verebilecek, uzak durması gereken içerikleri (ingredientsToAvoid) belirle.
+4. Görselden çıkardığın 0-100 arası gerçek puanları (oilinessScore, rednessScore, poreScore) JSON'a ekle.
 
 ANKET YANITLARI:
 ${JSON.stringify(quizAnswers, null, 2)}
 
-YÜZ GÖRSELİ METRİKLERİ:
-- T-Bölgesi Parlama/Yağ Skoru (0-100): ${selfieMetrics.oilinessScore || 50}
-- Kızarıklık/Hassasiyet Skoru (0-100): ${selfieMetrics.rednessScore || 10}
-- Gözenek Belirginlik Skoru (0-100): ${selfieMetrics.poreScore || 30}
+YÜZ GÖRSELİ BAŞLANGIÇ METRİKLERİ:
+- T-Bölgesi Parlama/Yağ Skoru: ${selfieMetrics.oilinessScore || 50}
+- Kızarıklık/Hassasiyet Skoru: ${selfieMetrics.rednessScore || 10}
+- Gözenek Belirginlik Skoru: ${selfieMetrics.poreScore || 30}
 
 ${SKIN_HYBRID_ANALYSIS_SCHEMA_PROMPT}
 `;
 
   if (model) {
     try {
-      const result = await model.generateContent(prompt);
+      const contents = [prompt];
+      if (photoBase64) {
+        const cleanBase64 = photoBase64.replace(/^data:image\/\w+;base64,/, '');
+        contents.push({
+          inlineData: {
+            data: cleanBase64,
+            mimeType: 'image/jpeg'
+          }
+        });
+      }
+
+      const result = await callGeminiWithRetry(model, contents);
       return parseGeminiJsonResponse(result.response.text());
     } catch (error) {
       console.error('⚠️ Gemini Hybrid Analiz Hatası:', error.message);
@@ -88,6 +135,9 @@ ${SKIN_HYBRID_ANALYSIS_SCHEMA_PROMPT}
   return {
     determinedSkinType: (selfieMetrics.oilinessScore > 65) ? 'Oily' : (selfieMetrics.oilinessScore > 40 ? 'Combination' : 'Dry'),
     barrierHealth: (selfieMetrics.rednessScore > 50) ? 'Compromised' : 'Healthy',
+    oilinessScore: selfieMetrics.oilinessScore || 55,
+    rednessScore: selfieMetrics.rednessScore || 20,
+    poreScore: selfieMetrics.poreScore || 40,
     oilinessLevel: 'Dengeli & T-Bölgesi Hafif Parlak',
     sensitivityRisk: (selfieMetrics.rednessScore > 40) ? 'Moderate' : 'Low',
     detectedConcerns: ['Sebum Dengesi', 'Gözenek Görünümü'],

@@ -35,10 +35,13 @@ const { width } = Dimensions.get('window');
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { t, language, toggleLanguage } = useLanguage();
-  const { profile } = useSkinProfile();
+  const { profile, isAnalyzed } = useSkinProfile();
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
   const skinTypeDisplay = (() => {
+    if (!isAnalyzed || profile.skinType === 'Not Determined') {
+      return language === 'tr' ? 'Belirlenmedi' : 'Not Determined';
+    }
     switch (profile.skinType) {
       case 'Oily':
         return t('skin_type_oily');
@@ -56,6 +59,9 @@ export const HomeScreen: React.FC = () => {
   })();
 
   const barrierStatusText = (() => {
+    if (!isAnalyzed) {
+      return language === 'tr' ? 'Analiz Bekleniyor' : 'Analysis Pending';
+    }
     if (profile.barrierHealth === 'Healthy') return t('home_balanced');
     if (profile.barrierHealth === 'Needs Repair') return language === 'tr' ? 'Onarımda' : 'Repairing';
     return language === 'tr' ? 'Dengeleniyor' : 'Balancing';
@@ -108,9 +114,17 @@ export const HomeScreen: React.FC = () => {
 
           {/* Karşılama Metni */}
           <View style={styles.greetingContainer}>
-            <Text style={styles.greetingTitle}>Merhaba, Elif</Text>
+            <Text style={styles.greetingTitle}>
+              {language === 'tr' ? 'Hoş Geldiniz' : 'Welcome'}
+            </Text>
             <Text style={styles.greetingSubtitle}>
-              Cildin bugün dengeli ve nem bariyeri güçlü görünüyor.
+              {isAnalyzed
+                ? (language === 'tr'
+                    ? 'Cildin bugün dengeli ve nem bariyeri güçlü görünüyor.'
+                    : 'Your skin barrier appears healthy and balanced today.')
+                : (language === 'tr'
+                    ? 'Kişiselleştirilmiş analizini başlatmak için tarama yapın veya anketi tamamlayın.'
+                    : 'Scan or take the quiz to generate your real skin profile.')}
             </Text>
           </View>
         </SafeAreaView>
@@ -127,7 +141,20 @@ export const HomeScreen: React.FC = () => {
           {/* Sol Kolon: Cilt Durumu */}
           <View style={styles.metricColumn}>
             <View style={styles.metricHeaderRow}>
-              <View style={[styles.pulseIndicator, { backgroundColor: profile.barrierHealth === 'Needs Repair' ? '#EF4444' : profile.barrierHealth === 'Compromised' ? '#F59E0B' : '#10B981' }]} />
+              <View
+                style={[
+                  styles.pulseIndicator,
+                  {
+                    backgroundColor: !isAnalyzed
+                      ? '#94A3B8'
+                      : profile.barrierHealth === 'Needs Repair'
+                      ? '#EF4444'
+                      : profile.barrierHealth === 'Compromised'
+                      ? '#F59E0B'
+                      : '#10B981',
+                  },
+                ]}
+              />
               <Text style={styles.metricTag}>{t('home_status')}</Text>
               <Text style={styles.metricStatusText}>• {barrierStatusText}</Text>
             </View>
@@ -136,7 +163,9 @@ export const HomeScreen: React.FC = () => {
               <ShieldCheck size={14} color="#4F46E5" />
               <Text style={styles.barrierScoreText}>
                 {t('home_barrier_label')}{' '}
-                <Text style={styles.barrierBoldText}>%{profile.barrierScore}</Text>
+                <Text style={styles.barrierBoldText}>
+                  {isAnalyzed && profile.barrierScore > 0 ? `%${profile.barrierScore}` : '—'}
+                </Text>
               </Text>
             </View>
           </View>
@@ -176,7 +205,7 @@ export const HomeScreen: React.FC = () => {
             <TouchableOpacity
               style={styles.scanActionButton}
               activeOpacity={0.88}
-              onPress={() => navigation.navigate('ScannerModal')}
+              onPress={() => navigation.navigate('SelfieAnalysis')}
             >
               <Scan size={16} color="#4F46E5" />
               <Text style={styles.scanActionText}>{t('home_scan_btn')}</Text>

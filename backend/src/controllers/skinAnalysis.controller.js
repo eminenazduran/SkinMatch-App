@@ -62,7 +62,7 @@ const submitQuizAnswers = async (req, res, next) => {
  */
 const processSelfieAnalysis = async (req, res, next) => {
   try {
-    const { userId, photoUrl, metrics = {} } = req.body;
+    const { userId, photoUrl, photoBase64, metrics = {} } = req.body;
 
     let user = null;
     if (userId) {
@@ -71,8 +71,8 @@ const processSelfieAnalysis = async (req, res, next) => {
 
     const quizAnswers = user?.skinProfile?.quizAnswers || [];
 
-    // Gemini Hybrid Analizini Çağır
-    const analysisResult = await analyzeSkinHybridWithGemini(quizAnswers, metrics);
+    // Gemini Hybrid Analizini Çağır (Gerçek Fotoğraf + Anket Sentezi)
+    const analysisResult = await analyzeSkinHybridWithGemini(quizAnswers, metrics, photoBase64);
 
     if (user) {
       user.skinProfile.skinType = analysisResult.determinedSkinType || 'Combination';
